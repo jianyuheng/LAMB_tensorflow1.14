@@ -36,6 +36,7 @@ class LAMBOptimizer(tf.train.Optimizer):
                beta_2=0.999,
                epsilon=1e-6,
                exclude_from_weight_decay=None,
+               exclude_from_layer_adaptation=None,
                name="LAMBOptimizer"):
     """Constructs a LAMBOptimizer."""
     super(LAMBOptimizer, self).__init__(False, name)
@@ -46,6 +47,10 @@ class LAMBOptimizer(tf.train.Optimizer):
     self.beta_2 = beta_2
     self.epsilon = epsilon
     self.exclude_from_weight_decay = exclude_from_weight_decay
+    if exclude_from_layer_adaptation:
+        self.exclude_from_layer_adaptation = exclude_from_layer_adaptation
+    else:
+        self.exclude_from_layer_adaptation = exclude_from_weight_decay
 
   def apply_gradients(self, grads_and_vars, global_step=None, name=None):
     """See base class."""
@@ -85,13 +90,15 @@ class LAMBOptimizer(tf.train.Optimizer):
       # ratio = array_ops.where(math_ops.greater(w_norm, 0), array_ops.where(
       #      math_ops.greater(g_norm, 0), (w_norm / g_norm), 1.0), 1.0)
 
-      w_norm = tf.norm(param, ord=2)
-      g_norm = tf.norm(update, ord=2)
-      ratio = tf.where(
-                       tf.greater(w_norm, 0),
-                       tf.where(tf.greater(g_norm, 0), (w_norm / g_norm), 1.0),
-                       1.0,
-                      )
+      ratio = 1.0
+      if self._do_layer_adaptation(param_name):
+        w_norm = tf.norm(param, ord=2)
+        g_norm = tf.norm(update, ord=2)
+        ratio = tf.where(
+                         tf.greater(w_norm, 0),
+                         tf.where(tf.greater(g_norm, 0), (w_norm / g_norm), 1.0),
+                         1.0,
+                        )
 
       eta = self.learning_rate * ratio
 
@@ -121,3 +128,11 @@ class LAMBOptimizer(tf.train.Optimizer):
     if m is not None:
       param_name = m.group(1)
     return param_name
+
+  def _do_layer_adaptation(self, param_name):
+    """Whether to do layer-wise learning rate adaptation for `param_name`."""
+    if self.exclude_from_layer_adaptation:
+      for r in self.exclude_from_layer_adaptation:
+        if re.search(r, param_name) is not None:
+          return False
+    return True
