@@ -89,16 +89,14 @@ class LAMBOptimizer(tf.train.Optimizer):
       ############## BELOW ARE THE SPECIFIC PARTS FOR LAMB ##############
       # ratio = array_ops.where(math_ops.greater(w_norm, 0), array_ops.where(
       #      math_ops.greater(g_norm, 0), (w_norm / g_norm), 1.0), 1.0)
-
-      ratio = 1.0
-      if self._do_layer_adaptation(param_name):
-        w_norm = tf.norm(param, ord=2)
-        g_norm = tf.norm(update, ord=2)
-        ratio = tf.where(
-                         tf.greater(w_norm, 0),
-                         tf.where(tf.greater(g_norm, 0), (w_norm / g_norm), 1.0),
-                         1.0,
-                        )
+      
+      w_norm = tf.norm(param, ord=2)
+      g_norm = tf.norm(update, ord=2)
+      ratio = tf.where(
+                       tf.greater(w_norm, 0),
+                       tf.where(tf.greater(g_norm, 0), (w_norm / g_norm), 1.0),
+                       1.0,
+                      )
 
       eta = self.learning_rate * ratio
 
