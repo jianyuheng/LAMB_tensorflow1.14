@@ -36,7 +36,6 @@ class LAMBOptimizer(tf.train.Optimizer):
                beta_2=0.999,
                epsilon=1e-6,
                exclude_from_weight_decay=None,
-               exclude_from_layer_adaptation=None,
                name="LAMBOptimizer"):
     """Constructs a LAMBOptimizer."""
     super(LAMBOptimizer, self).__init__(False, name)
@@ -47,10 +46,6 @@ class LAMBOptimizer(tf.train.Optimizer):
     self.beta_2 = beta_2
     self.epsilon = epsilon
     self.exclude_from_weight_decay = exclude_from_weight_decay
-    if exclude_from_layer_adaptation:
-        self.exclude_from_layer_adaptation = exclude_from_layer_adaptation
-    else:
-        self.exclude_from_layer_adaptation = exclude_from_weight_decay
 
   def apply_gradients(self, grads_and_vars, global_step=None, name=None):
     """See base class."""
